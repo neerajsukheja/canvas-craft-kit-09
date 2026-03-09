@@ -54,7 +54,11 @@ const BuilderPage = () => {
         />
         <PropertiesPanel
           component={builder.selectedComponent}
+          section={builder.selectedSection}
           onUpdateProps={builder.updateComponentProps}
+          onUpdateLayout={builder.updateComponentLayout}
+          onUpdateSectionLayout={builder.updateSectionLayout}
+          onUpdateSectionName={builder.updateSectionName}
         />
       </div>
     </div>

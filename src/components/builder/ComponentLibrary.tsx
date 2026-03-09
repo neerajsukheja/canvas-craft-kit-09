@@ -1,10 +1,12 @@
-import { Type, RectangleHorizontal, CreditCard, Box, LayoutGrid, TextCursor, Minus, User, ImageIcon, List, Layers } from 'lucide-react';
+import { Type, RectangleHorizontal, CreditCard, Box, LayoutGrid, TextCursor, Minus, User, ImageIcon, List, Layers, Navigation, Star } from 'lucide-react';
 import type { ComponentType } from '@/types/builder';
 
 const components: { type: ComponentType; label: string; icon: React.ElementType }[] = [
+  { type: 'navbar', label: 'Navbar', icon: Navigation },
   { type: 'typography', label: 'Typography', icon: Type },
   { type: 'button', label: 'Button', icon: RectangleHorizontal },
   { type: 'card', label: 'Card', icon: CreditCard },
+  { type: 'icon-card', label: 'Icon Card', icon: Star },
   { type: 'container', label: 'Container', icon: Box },
   { type: 'grid', label: 'Grid', icon: LayoutGrid },
   { type: 'textfield', label: 'TextField', icon: TextCursor },
