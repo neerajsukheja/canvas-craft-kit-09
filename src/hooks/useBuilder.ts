@@ -1,21 +1,39 @@
 import { useState, useCallback } from 'react';
-import type { BuilderPage, BuilderComponent, BuilderSection, ComponentType, ComponentProps } from '@/types/builder';
+import type { BuilderPage, BuilderComponent, BuilderSection, ComponentType, ComponentProps, LayoutProps, SectionLayout } from '@/types/builder';
 
 let globalId = 1000;
 const genId = (prefix: string) => `${prefix}-${++globalId}`;
 
+const defaultLayout: LayoutProps = {
+  colSpan: 12,
+  padding: 'none',
+  margin: 'none',
+  alignSelf: 'stretch',
+};
+
+const defaultSectionLayout: SectionLayout = {
+  columns: 12,
+  gap: 'md',
+  padding: 'md',
+  background: 'white',
+  maxWidth: 'xl',
+  minHeight: 'auto',
+};
+
 const defaultProps: Record<ComponentType, ComponentProps> = {
-  typography: { text: 'New Text', variant: 'body1', align: 'left' },
-  button: { label: 'Button', variant: 'primary', size: 'md' },
-  card: { title: 'Card Title', description: 'Card description goes here.' },
+  typography: { text: 'New Text', variant: 'body1', align: 'left', color: 'default', weight: 'normal' },
+  button: { label: 'Button', variant: 'primary', size: 'md', fullWidth: false },
+  card: { title: 'Card Title', description: 'Card description goes here.', cardStyle: 'default', icon: 'none' },
   container: { maxWidth: 'lg', padding: 'md' },
   grid: { columns: '2', gap: 'md' },
   textfield: { label: 'Label', placeholder: 'Enter text...', type: 'text' },
-  divider: { thickness: 'thin' },
+  divider: { thickness: 'thin', color: 'default' },
   avatar: { src: '', alt: 'Avatar', size: 'md' },
-  image: { src: 'https://placehold.co/600x300/d71e28/ffffff?text=Image', alt: 'Image', width: '100%' },
-  list: { items: 'Item 1,Item 2,Item 3', ordered: false },
-  stack: { direction: 'row', gap: 'md', align: 'center' },
+  image: { src: 'https://placehold.co/600x300/d71e28/ffffff?text=Image', alt: 'Image', objectFit: 'cover', rounded: 'md' },
+  list: { items: 'Item 1,Item 2,Item 3', ordered: false, listStyle: 'default' },
+  stack: { direction: 'row', gap: 'md', align: 'center', wrap: false },
+  navbar: { brand: 'WELLS FARGO', links: 'Personal,Business,Commercial,Corporate', navStyle: 'primary' },
+  'icon-card': { title: 'Feature Title', description: 'Feature description here.', linkText: 'Learn more', icon: 'star' },
 };
 
 export function useBuilder(initialPage: BuilderPage) {
@@ -38,6 +56,7 @@ export function useBuilder(initialPage: BuilderPage) {
       id: genId('comp'),
       type: componentType,
       props: { ...defaultProps[componentType] },
+      layout: { ...defaultLayout },
     };
     updatePage(p => ({
       ...p,
@@ -94,6 +113,7 @@ export function useBuilder(initialPage: BuilderPage) {
       name: 'New Section',
       style: 'wf-section',
       components: [],
+      layout: { ...defaultSectionLayout },
     };
     updatePage(p => ({
       ...p,
@@ -135,6 +155,36 @@ export function useBuilder(initialPage: BuilderPage) {
     }));
   }, [updatePage]);
 
+  const updateComponentLayout = useCallback((componentId: string, newLayout: Partial<LayoutProps>) => {
+    updatePage(p => ({
+      ...p,
+      sections: p.sections.map(s => ({
+        ...s,
+        components: s.components.map(c =>
+          c.id === componentId ? { ...c, layout: { ...c.layout, ...newLayout } } : c
+        ),
+      })),
+    }));
+  }, [updatePage]);
+
+  const updateSectionLayout = useCallback((sectionId: string, newLayout: Partial<SectionLayout>) => {
+    updatePage(p => ({
+      ...p,
+      sections: p.sections.map(s =>
+        s.id === sectionId ? { ...s, layout: { ...s.layout, ...newLayout } } : s
+      ),
+    }));
+  }, [updatePage]);
+
+  const updateSectionName = useCallback((sectionId: string, name: string) => {
+    updatePage(p => ({
+      ...p,
+      sections: p.sections.map(s =>
+        s.id === sectionId ? { ...s, name } : s
+      ),
+    }));
+  }, [updatePage]);
+
   return {
     page,
     selectedComponent,
@@ -150,5 +200,8 @@ export function useBuilder(initialPage: BuilderPage) {
     deleteSection,
     deleteComponent,
     updateComponentProps,
+    updateComponentLayout,
+    updateSectionLayout,
+    updateSectionName,
   };
 }
