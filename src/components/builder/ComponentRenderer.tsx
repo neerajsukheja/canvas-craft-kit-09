@@ -204,7 +204,7 @@ export function ComponentRenderer({ component }: Props) {
           src={props.src as string || 'https://placehold.co/600x300/d71e28/ffffff?text=Image'}
           alt={props.alt as string}
           className={`w-full max-w-full ${roundedMap[props.rounded as string] || 'rounded-md'}`}
-          style={{ objectFit: (props.objectFit as string) || 'cover' }}
+          style={{ objectFit: (props.objectFit as React.CSSProperties['objectFit']) || 'cover' }}
         />
       );
     }
