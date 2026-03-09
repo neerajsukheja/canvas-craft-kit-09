@@ -110,7 +110,7 @@
   }
 
   .builder-component-selected {
-    @apply outline-2 outline-solid outline-primary ring-2 ring-primary/20;
+    @apply outline outline-2 outline-primary ring-2 ring-primary/20;
   }
 
   .builder-drop-zone {
