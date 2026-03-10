@@ -132,16 +132,48 @@ export function PropertiesPanel({ component, section, onUpdateProps, onUpdateLay
               </div>
             </div>
             <div className="border-t border-border pt-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-3">Layout</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-3">Layout (Bootstrap Grid)</span>
               <div className="space-y-3">
-                {LAYOUT_PROPERTY_DEFS.map(def => (
-                  <RenderField
-                    key={def.key}
-                    def={def}
-                    value={def.key === 'colSpan' ? String(component.layout?.colSpan || 12) : ((component.layout as any)?.[def.key] ?? '')}
-                    onChange={(val) => onUpdateLayout(component.id, { [def.key]: def.key === 'colSpan' ? Number(val) : val } as any)}
-                  />
-                ))}
+                {LAYOUT_PROPERTY_DEFS.map(def => {
+                  const val = def.key === 'colSpan'
+                    ? String(component.layout?.colSpan || 12)
+                    : def.key === 'colSpanMd'
+                    ? String(component.layout?.colSpanMd || component.layout?.colSpan || 12)
+                    : def.key === 'colSpanSm'
+                    ? String(component.layout?.colSpanSm || 12)
+                    : ((component.layout as any)?.[def.key] ?? '');
+                  return (
+                    <RenderField
+                      key={def.key}
+                      def={def}
+                      value={val}
+                      onChange={(v) => onUpdateLayout(component.id, { [def.key]: ['colSpan', 'colSpanMd', 'colSpanSm'].includes(def.key) ? Number(v) : v } as any)}
+                    />
+                  );
+                })}
+              </div>
+              {/* Visual column indicator */}
+              <div className="mt-4">
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">Column Preview</label>
+                <div className="grid grid-cols-12 gap-0.5">
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <div
+                      key={i}
+                      className={`h-3 rounded-sm cursor-pointer transition-colors ${
+                        i < (component.layout?.colSpan || 12)
+                          ? 'bg-primary'
+                          : 'bg-muted'
+                      }`}
+                      onClick={() => onUpdateLayout(component.id, { colSpan: i + 1 })}
+                      title={`${i + 1} columns`}
+                    />
+                  ))}
+                </div>
+                <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
+                  <span>1</span>
+                  <span>6</span>
+                  <span>12</span>
+                </div>
               </div>
             </div>
           </>

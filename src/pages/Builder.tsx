@@ -6,7 +6,6 @@ import { ComponentLibrary } from '@/components/builder/ComponentLibrary';
 import { Canvas } from '@/components/builder/Canvas';
 import { PropertiesPanel } from '@/components/builder/PropertiesPanel';
 import { Toolbar } from '@/components/builder/Toolbar';
-import type { ComponentType } from '@/types/builder';
 
 const BuilderPage = () => {
   const { templateId } = useParams<{ templateId: string }>();
@@ -36,6 +35,7 @@ const BuilderPage = () => {
         pageTitle={builder.page.title}
         templateName={builder.page.templateName}
         canvasRef={canvasRef}
+        page={builder.page}
       />
       <div className="flex flex-1 overflow-hidden">
         <ComponentLibrary onDragStart={() => {}} />
@@ -50,6 +50,8 @@ const BuilderPage = () => {
           onDeleteSection={builder.deleteSection}
           onAddSection={builder.addSection}
           onReorderSections={builder.reorderSections}
+          onMoveComponent={builder.moveComponent}
+          onUpdateComponentLayout={builder.updateComponentLayout}
           canvasRef={canvasRef}
         />
         <PropertiesPanel
