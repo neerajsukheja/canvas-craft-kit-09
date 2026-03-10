@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { Trash2, Plus, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
+import { Trash2, Plus, ChevronUp, ChevronDown, GripVertical, Move } from 'lucide-react';
 import type { BuilderPage, BuilderComponent, BuilderSection, ComponentType, LayoutProps } from '@/types/builder';
 import { ComponentRenderer } from './ComponentRenderer';
 
@@ -26,7 +26,7 @@ const bgClasses: Record<string, string> = {
   dark: 'bg-foreground text-background',
   primary: 'bg-primary text-primary-foreground',
   'primary-light': 'bg-primary/5',
-  'gold-light': 'bg-gold/10',
+  'gold-light': 'bg-[hsl(var(--gold-accent))]/10',
 };
 
 const paddingClasses: Record<string, string> = {
@@ -43,6 +43,10 @@ const maxWidthClasses: Record<string, string> = {
 
 const minHeightClasses: Record<string, string> = {
   auto: '', sm: 'min-h-[200px]', md: 'min-h-[400px]', lg: 'min-h-[600px]',
+};
+
+const componentMinHeightClasses: Record<string, string> = {
+  auto: '', sm: 'min-h-[60px]', md: 'min-h-[120px]', lg: 'min-h-[200px]', xl: 'min-h-[300px]',
 };
 
 const componentPaddingClasses: Record<string, string> = {
@@ -64,7 +68,6 @@ export function Canvas({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [draggedComp, setDraggedComp] = useState<{ compId: string; sectionId: string } | null>(null);
 
-  // Handle drop from library OR reorder
   const handleDrop = (e: React.DragEvent, sectionId: string, index?: number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -94,105 +97,110 @@ export function Canvas({
   };
 
   return (
-    <div className="flex-1 bg-[hsl(var(--builder-canvas))] overflow-y-auto p-6">
-      <div ref={canvasRef} className="max-w-5xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden min-h-[600px]">
-        {page.sections.map((section, sIdx) => {
-          const sl = section.layout;
-          const sectionBg = bgClasses[sl?.background] || 'bg-background';
-          const sectionPadding = paddingClasses[sl?.padding] || 'p-6';
-          const sectionGap = gapClasses[sl?.gap] || 'gap-4';
-          const sectionMaxWidth = maxWidthClasses[sl?.maxWidth] || 'max-w-7xl';
-          const sectionMinHeight = minHeightClasses[sl?.minHeight || 'auto'] || '';
+    <div className="flex-1 bg-[hsl(var(--builder-canvas))] overflow-y-auto">
+      <div className="p-6">
+        <div ref={canvasRef} className="max-w-5xl mx-auto bg-background shadow-xl rounded-xl overflow-hidden min-h-[600px] border border-border/50">
+          {page.sections.map((section, sIdx) => {
+            const sl = section.layout;
+            const sectionBg = bgClasses[sl?.background] || 'bg-background';
+            const sectionPadding = paddingClasses[sl?.padding] || 'p-6';
+            const sectionGap = gapClasses[sl?.gap] || 'gap-4';
+            const sectionMaxWidth = maxWidthClasses[sl?.maxWidth] || 'max-w-7xl';
+            const sectionMinHeight = minHeightClasses[sl?.minHeight || 'auto'] || '';
 
-          return (
-            <div key={section.id}>
-              {sIdx === 0 && <InsertSectionButton onClick={() => onAddSection(0)} />}
+            return (
+              <div key={section.id}>
+                {sIdx === 0 && <InsertSectionButton onClick={() => onAddSection(0)} />}
 
-              <div
-                className={`relative group transition-all ${sectionBg} ${sectionMinHeight} ${
-                  selectedSectionId === section.id ? 'ring-2 ring-primary/30' : ''
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectSection(section.id);
-                  onSelectComponent(null);
-                }}
-              >
-                {/* Section toolbar */}
-                <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex gap-1 p-1 bg-background/90 rounded-bl-md border-l border-b border-border">
-                  <span className="text-[10px] text-muted-foreground px-1 py-0.5">{section.name}</span>
-                  {sIdx > 0 && (
-                    <button onClick={(e) => { e.stopPropagation(); onReorderSections(sIdx, sIdx - 1); }} className="p-1 hover:bg-accent rounded">
-                      <ChevronUp className="w-3 h-3" />
-                    </button>
-                  )}
-                  {sIdx < page.sections.length - 1 && (
-                    <button onClick={(e) => { e.stopPropagation(); onReorderSections(sIdx, sIdx + 1); }} className="p-1 hover:bg-accent rounded">
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-                  )}
-                  <button onClick={(e) => { e.stopPropagation(); onDeleteSection(section.id); }} className="p-1 hover:bg-destructive/10 text-destructive rounded">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-
-                {/* Section content - Bootstrap-style 12-col grid */}
                 <div
-                  className={`${sectionPadding} mx-auto ${sectionMaxWidth}`}
-                  onDragOver={(e) => handleDragOver(e, section.id)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, section.id)}
+                  className={`relative group transition-all ${sectionBg} ${sectionMinHeight} ${
+                    selectedSectionId === section.id ? 'ring-2 ring-primary/30' : ''
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectSection(section.id);
+                    onSelectComponent(null);
+                  }}
                 >
-                  {section.components.length === 0 && (
-                    <div className={`builder-drop-zone py-8 flex items-center justify-center ${
-                      dragOverSection === section.id ? 'bg-primary/5 border-primary' : ''
-                    }`}>
-                      <span className="text-sm text-muted-foreground">Drop components here</span>
-                    </div>
-                  )}
+                  {/* Section toolbar */}
+                  <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center gap-1 p-1.5 bg-background/95 backdrop-blur-sm rounded-bl-lg border-l border-b border-border shadow-sm">
+                    <span className="text-[10px] font-medium text-muted-foreground px-1.5 py-0.5 bg-muted rounded">{section.name}</span>
+                    {sIdx > 0 && (
+                      <button onClick={(e) => { e.stopPropagation(); onReorderSections(sIdx, sIdx - 1); }} className="p-1 hover:bg-accent rounded transition-colors">
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {sIdx < page.sections.length - 1 && (
+                      <button onClick={(e) => { e.stopPropagation(); onReorderSections(sIdx, sIdx + 1); }} className="p-1 hover:bg-accent rounded transition-colors">
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); onDeleteSection(section.id); }} className="p-1 hover:bg-destructive/10 text-destructive rounded transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
-                  {section.components.length > 0 && (
-                    <div className={`grid grid-cols-12 ${sectionGap}`}>
-                      {section.components.map((comp, cIdx) => (
-                        <DraggableComponent
-                          key={comp.id}
-                          comp={comp}
-                          cIdx={cIdx}
-                          sectionId={section.id}
-                          selectedComponentId={selectedComponentId}
-                          dragOverSection={dragOverSection}
-                          dragOverIndex={dragOverIndex}
-                          onSelectComponent={onSelectComponent}
-                          onSelectSection={onSelectSection}
-                          onDeleteComponent={onDeleteComponent}
-                          onDragOver={handleDragOver}
-                          onDrop={handleDrop}
-                          onDragStart={() => setDraggedComp({ compId: comp.id, sectionId: section.id })}
-                          onDragEnd={() => setDraggedComp(null)}
-                          onUpdateComponentLayout={onUpdateComponentLayout}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <div
+                    className={`${sectionPadding} mx-auto ${sectionMaxWidth}`}
+                    onDragOver={(e) => handleDragOver(e, section.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, section.id)}
+                  >
+                    {section.components.length === 0 && (
+                      <div className={`builder-drop-zone py-10 flex flex-col items-center justify-center gap-2 ${
+                        dragOverSection === section.id ? 'bg-primary/5 border-primary' : ''
+                      }`}>
+                        <Move className="w-5 h-5 text-muted-foreground/50" />
+                        <span className="text-sm text-muted-foreground/70">Drag & drop components here</span>
+                      </div>
+                    )}
+
+                    {section.components.length > 0 && (
+                      <div className={`grid grid-cols-12 ${sectionGap}`}>
+                        {section.components.map((comp, cIdx) => (
+                          <DraggableComponent
+                            key={comp.id}
+                            comp={comp}
+                            cIdx={cIdx}
+                            sectionId={section.id}
+                            selectedComponentId={selectedComponentId}
+                            dragOverSection={dragOverSection}
+                            dragOverIndex={dragOverIndex}
+                            onSelectComponent={onSelectComponent}
+                            onSelectSection={onSelectSection}
+                            onDeleteComponent={onDeleteComponent}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
+                            onDragStart={() => setDraggedComp({ compId: comp.id, sectionId: section.id })}
+                            onDragEnd={() => setDraggedComp(null)}
+                            onUpdateComponentLayout={onUpdateComponentLayout}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                <InsertSectionButton onClick={() => onAddSection(sIdx + 1)} />
               </div>
+            );
+          })}
 
-              <InsertSectionButton onClick={() => onAddSection(sIdx + 1)} />
+          {page.sections.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-96 gap-3">
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+                <Plus className="w-7 h-7 text-muted-foreground" />
+              </div>
+              <button
+                onClick={() => onAddSection()}
+                className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium border border-dashed border-border rounded-lg hover:bg-accent hover:border-primary/30 transition-all"
+              >
+                Add First Section
+              </button>
+              <p className="text-xs text-muted-foreground">Start building your page</p>
             </div>
-          );
-        })}
-
-        {page.sections.length === 0 && (
-          <div className="flex items-center justify-center h-96">
-            <button
-              onClick={() => onAddSection()}
-              className="flex items-center gap-2 px-4 py-2 text-sm border border-dashed border-border rounded-md hover:bg-accent transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add First Section
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -226,12 +234,14 @@ function DraggableComponent({
   const isSelected = selectedComponentId === comp.id;
   const resizeRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [resizeDir, setResizeDir] = useState<'width' | 'height' | null>(null);
 
-  // Mouse resize handler - adjusts colSpan based on drag distance
+  // Width resize (right handle)
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setIsResizing(true);
+    setResizeDir('width');
 
     const startX = e.clientX;
     const parentGrid = resizeRef.current?.parentElement;
@@ -252,6 +262,7 @@ function DraggableComponent({
 
     const onMouseUp = () => {
       setIsResizing(false);
+      setResizeDir(null);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       document.body.style.cursor = '';
@@ -264,11 +275,12 @@ function DraggableComponent({
     document.addEventListener('mouseup', onMouseUp);
   }, [span, comp.id, onUpdateComponentLayout]);
 
-  // Left resize handler
+  // Width resize (left handle)
   const handleResizeLeftStart = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setIsResizing(true);
+    setResizeDir('width');
 
     const startX = e.clientX;
     const parentGrid = resizeRef.current?.parentElement;
@@ -289,6 +301,7 @@ function DraggableComponent({
 
     const onMouseUp = () => {
       setIsResizing(false);
+      setResizeDir(null);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
       document.body.style.cursor = '';
@@ -301,10 +314,62 @@ function DraggableComponent({
     document.addEventListener('mouseup', onMouseUp);
   }, [span, comp.id, onUpdateComponentLayout]);
 
+  // Height resize (bottom handle)
+  const handleResizeHeightStart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsResizing(true);
+    setResizeDir('height');
+
+    const startY = e.clientY;
+    const el = resizeRef.current;
+    if (!el) return;
+
+    const startHeight = el.getBoundingClientRect().height;
+    const heightSteps = [
+      { label: 'auto', value: 0 },
+      { label: 'sm', value: 60 },
+      { label: 'md', value: 120 },
+      { label: 'lg', value: 200 },
+      { label: 'xl', value: 300 },
+    ];
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const targetHeight = startHeight + deltaY;
+
+      // Snap to nearest height step
+      let closest = heightSteps[0];
+      let minDist = Infinity;
+      for (const step of heightSteps) {
+        const dist = Math.abs(targetHeight - (step.value || startHeight));
+        if (dist < minDist) {
+          minDist = dist;
+          closest = step;
+        }
+      }
+      onUpdateComponentLayout(comp.id, { minHeight: closest.label });
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      setResizeDir(null);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [comp.id, onUpdateComponentLayout]);
+
   const cPadding = componentPaddingClasses[cl?.padding || 'none'] || '';
   const cMargin = componentMarginClasses[cl?.margin || 'none'] || '';
+  const cMinHeight = componentMinHeightClasses[cl?.minHeight || 'auto'] || '';
 
-  // Build responsive col-span style using inline grid-column for Bootstrap logic
   const colStyle: React.CSSProperties = {
     gridColumn: `span ${span} / span ${span}`,
   };
@@ -320,7 +385,7 @@ function DraggableComponent({
       }}
       onDragEnd={onDragEnd}
       style={colStyle}
-      className={`${cPadding} ${cMargin} relative group/comp cursor-pointer transition-all rounded ${
+      className={`${cPadding} ${cMargin} ${cMinHeight} relative group/comp cursor-pointer transition-all rounded-md ${
         isSelected
           ? 'builder-component-selected'
           : 'hover:outline hover:outline-1 hover:outline-dashed hover:outline-primary/30'
@@ -335,18 +400,20 @@ function DraggableComponent({
     >
       {/* Drag handle + toolbar */}
       {isSelected && (
-        <div className="absolute -top-7 left-0 right-0 z-20 flex items-center justify-between">
-          <div className="flex items-center gap-1 bg-primary text-primary-foreground shadow-sm rounded-t px-2 py-0.5">
+        <div className="absolute -top-8 left-0 right-0 z-20 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 bg-primary text-primary-foreground shadow-md rounded-t-lg px-2.5 py-1">
             <GripVertical className="w-3 h-3 cursor-grab opacity-70" />
-            <span className="text-[10px] font-medium">{comp.type}</span>
-            <span className="text-[9px] opacity-70 ml-1">col-{span}</span>
+            <span className="text-[10px] font-semibold tracking-wide">{comp.type}</span>
+            <span className="text-[9px] opacity-60 ml-1 bg-primary-foreground/20 px-1.5 py-0.5 rounded">
+              {span}/12{cl?.minHeight && cl.minHeight !== 'auto' ? ` · h:${cl.minHeight}` : ''}
+            </span>
           </div>
-          <div className="flex gap-1 bg-background shadow-sm rounded border border-border px-1 py-0.5">
+          <div className="flex gap-0.5 bg-background shadow-md rounded-lg border border-border px-1.5 py-1">
             <button
               onClick={(e) => { e.stopPropagation(); onDeleteComponent(comp.id); }}
-              className="p-0.5 hover:bg-destructive/10 text-destructive rounded"
+              className="p-1 hover:bg-destructive/10 text-destructive rounded transition-colors"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -355,28 +422,38 @@ function DraggableComponent({
       {/* Left resize handle */}
       {isSelected && (
         <div
-          className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize z-30 group/resize-left"
+          className="absolute left-0 top-0 bottom-0 w-2.5 cursor-col-resize z-30 group/resize-left"
           onMouseDown={handleResizeLeftStart}
         >
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-full opacity-0 group-hover/resize-left:opacity-100 transition-opacity" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-primary rounded-full opacity-0 group-hover/resize-left:opacity-100 transition-opacity shadow-sm" />
         </div>
       )}
 
       {/* Right resize handle */}
       {isSelected && (
         <div
-          className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize z-30 group/resize-right"
+          className="absolute right-0 top-0 bottom-0 w-2.5 cursor-col-resize z-30 group/resize-right"
           onMouseDown={handleResizeStart}
         >
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-full opacity-0 group-hover/resize-right:opacity-100 transition-opacity" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-primary rounded-full opacity-0 group-hover/resize-right:opacity-100 transition-opacity shadow-sm" />
         </div>
       )}
 
-      {/* Column span indicator on resize */}
+      {/* Bottom resize handle (height) */}
+      {isSelected && (
+        <div
+          className="absolute bottom-0 left-0 right-0 h-2.5 cursor-row-resize z-30 group/resize-bottom"
+          onMouseDown={handleResizeHeightStart}
+        >
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1.5 w-10 bg-primary rounded-full opacity-0 group-hover/resize-bottom:opacity-100 transition-opacity shadow-sm" />
+        </div>
+      )}
+
+      {/* Resize indicator overlay */}
       {isResizing && (
-        <div className="absolute inset-0 border-2 border-primary/50 bg-primary/5 rounded flex items-center justify-center z-20 pointer-events-none">
-          <span className="text-xs font-bold text-primary bg-background/90 px-2 py-0.5 rounded">
-            {span}/12 cols
+        <div className="absolute inset-0 border-2 border-primary/50 bg-primary/5 rounded-md flex items-center justify-center z-20 pointer-events-none">
+          <span className="text-xs font-bold text-primary bg-background/95 px-3 py-1 rounded-md shadow-sm">
+            {resizeDir === 'width' ? `${span}/12 cols` : `height: ${cl?.minHeight || 'auto'}`}
           </span>
         </div>
       )}
@@ -391,7 +468,7 @@ function InsertSectionButton({ onClick }: { onClick: () => void }) {
     <div className="flex items-center justify-center py-1 opacity-0 hover:opacity-100 transition-opacity">
       <button
         onClick={(e) => { e.stopPropagation(); onClick(); }}
-        className="flex items-center gap-1 px-3 py-1 text-xs text-muted-foreground hover:text-primary border border-dashed border-border hover:border-primary rounded-full transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-muted-foreground hover:text-primary border border-dashed border-border hover:border-primary rounded-full transition-all hover:bg-primary/5"
       >
         <Plus className="w-3 h-3" />
         Section

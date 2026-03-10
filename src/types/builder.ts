@@ -22,6 +22,7 @@ export interface LayoutProps {
   colSpanMd?: number;    // medium breakpoint col span
   colSpanSm?: number;    // small breakpoint col span
   rowSpan?: number;
+  minHeight?: string;    // auto, sm, md, lg, xl, custom
   padding?: string;      // none, sm, md, lg, xl
   margin?: string;       // none, sm, md, lg
   alignSelf?: string;    // start, center, end, stretch
@@ -149,6 +150,7 @@ export const LAYOUT_PROPERTY_DEFS: PropertyDefinition[] = [
   { key: 'colSpan', label: 'Column Span (lg)', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
   { key: 'colSpanMd', label: 'Column Span (md)', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
   { key: 'colSpanSm', label: 'Column Span (sm)', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
+  { key: 'minHeight', label: 'Min Height', type: 'select', options: ['auto', 'sm', 'md', 'lg', 'xl'] },
   { key: 'padding', label: 'Padding', type: 'select', options: ['none', 'sm', 'md', 'lg', 'xl'] },
   { key: 'margin', label: 'Margin', type: 'select', options: ['none', 'sm', 'md', 'lg'] },
   { key: 'alignSelf', label: 'Align Self', type: 'select', options: ['start', 'center', 'end', 'stretch'] },
