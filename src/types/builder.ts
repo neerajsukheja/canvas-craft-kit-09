@@ -19,6 +19,8 @@ export interface ComponentProps {
 
 export interface LayoutProps {
   colSpan: number;       // 1-12 grid columns
+  colSpanMd?: number;    // medium breakpoint col span
+  colSpanSm?: number;    // small breakpoint col span
   rowSpan?: number;
   padding?: string;      // none, sm, md, lg, xl
   margin?: string;       // none, sm, md, lg
@@ -144,7 +146,9 @@ export const COMPONENT_PROPERTY_DEFS: Record<ComponentType, PropertyDefinition[]
 };
 
 export const LAYOUT_PROPERTY_DEFS: PropertyDefinition[] = [
-  { key: 'colSpan', label: 'Column Span', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
+  { key: 'colSpan', label: 'Column Span (lg)', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
+  { key: 'colSpanMd', label: 'Column Span (md)', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
+  { key: 'colSpanSm', label: 'Column Span (sm)', type: 'select', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
   { key: 'padding', label: 'Padding', type: 'select', options: ['none', 'sm', 'md', 'lg', 'xl'] },
   { key: 'margin', label: 'Margin', type: 'select', options: ['none', 'sm', 'md', 'lg'] },
   { key: 'alignSelf', label: 'Align Self', type: 'select', options: ['start', 'center', 'end', 'stretch'] },
