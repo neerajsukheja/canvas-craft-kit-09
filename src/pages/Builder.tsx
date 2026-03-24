@@ -64,6 +64,7 @@ const BuilderPage = () => {
           onUpdateSectionName={builder.updateSectionName}
         />
       </div>
+      <AIDesignChat page={builder.page} onApplyPageUpdate={builder.setPageDirect} />
     </div>
   );
 };
