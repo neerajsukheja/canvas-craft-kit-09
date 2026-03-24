@@ -6,6 +6,7 @@ import { ComponentLibrary } from '@/components/builder/ComponentLibrary';
 import { Canvas } from '@/components/builder/Canvas';
 import { PropertiesPanel } from '@/components/builder/PropertiesPanel';
 import { Toolbar } from '@/components/builder/Toolbar';
+import { AIDesignChat } from '@/components/builder/AIDesignChat';
 
 const BuilderPage = () => {
   const { templateId } = useParams<{ templateId: string }>();
@@ -63,6 +64,7 @@ const BuilderPage = () => {
           onUpdateSectionName={builder.updateSectionName}
         />
       </div>
+      <AIDesignChat page={builder.page} onApplyPageUpdate={builder.setPageDirect} />
     </div>
   );
 };
