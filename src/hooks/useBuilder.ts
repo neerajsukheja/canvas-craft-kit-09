@@ -185,8 +185,13 @@ export function useBuilder(initialPage: BuilderPage) {
     }));
   }, [updatePage]);
 
+  const setPageDirect = useCallback((newPage: BuilderPage) => {
+    setPage(newPage);
+  }, []);
+
   return {
     page,
+    setPageDirect,
     selectedComponent,
     selectedSection,
     selectedComponentId,
