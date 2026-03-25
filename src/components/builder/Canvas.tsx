@@ -370,8 +370,49 @@ function DraggableComponent({
   const cMargin = componentMarginClasses[cl?.margin || 'none'] || '';
   const cMinHeight = componentMinHeightClasses[cl?.minHeight || 'auto'] || '';
 
+  // Build inline styles from advanced layout props
+  const advancedStyle: React.CSSProperties = {};
+  
+  // Individual spacing overrides
+  const spacingMap: Record<string, string> = { none: '0', xs: '0.25rem', sm: '0.5rem', md: '1rem', lg: '1.5rem', xl: '2rem', '2xl': '3rem' };
+  if (cl?.paddingTop && cl.paddingTop !== 'none') advancedStyle.paddingTop = spacingMap[cl.paddingTop] || undefined;
+  if (cl?.paddingRight && cl.paddingRight !== 'none') advancedStyle.paddingRight = spacingMap[cl.paddingRight] || undefined;
+  if (cl?.paddingBottom && cl.paddingBottom !== 'none') advancedStyle.paddingBottom = spacingMap[cl.paddingBottom] || undefined;
+  if (cl?.paddingLeft && cl.paddingLeft !== 'none') advancedStyle.paddingLeft = spacingMap[cl.paddingLeft] || undefined;
+  if (cl?.marginTop && cl.marginTop !== 'none') advancedStyle.marginTop = spacingMap[cl.marginTop] || undefined;
+  if (cl?.marginBottom && cl.marginBottom !== 'none') advancedStyle.marginBottom = spacingMap[cl.marginBottom] || undefined;
+
+  // Typography overrides
+  const fontSizeMap: Record<string, string> = { xs: '0.75rem', sm: '0.875rem', base: '1rem', lg: '1.125rem', xl: '1.25rem', '2xl': '1.5rem', '3xl': '1.875rem', '4xl': '2.25rem', '5xl': '3rem' };
+  if (cl?.fontFamily && cl.fontFamily !== 'inherit') advancedStyle.fontFamily = cl.fontFamily;
+  if (cl?.fontSize && cl.fontSize !== 'inherit') advancedStyle.fontSize = fontSizeMap[cl.fontSize] || undefined;
+  const fwMap: Record<string, number> = { light: 300, normal: 400, medium: 500, semibold: 600, bold: 700, extrabold: 800 };
+  if (cl?.fontWeight && cl.fontWeight !== 'inherit') advancedStyle.fontWeight = fwMap[cl.fontWeight] || undefined;
+  const lhMap: Record<string, string> = { tight: '1.25', snug: '1.375', normal: '1.5', relaxed: '1.625', loose: '2' };
+  if (cl?.lineHeight && cl.lineHeight !== 'inherit') advancedStyle.lineHeight = lhMap[cl.lineHeight] || undefined;
+  const lsMap: Record<string, string> = { tighter: '-0.05em', tight: '-0.025em', normal: '0', wide: '0.025em', wider: '0.05em', widest: '0.1em' };
+  if (cl?.letterSpacing && cl.letterSpacing !== 'inherit') advancedStyle.letterSpacing = lsMap[cl.letterSpacing] || undefined;
+
+  // Background & Border
+  const bgColorMap: Record<string, string> = { white: 'hsl(0 0% 100%)', light: 'hsl(220 14% 96%)', dark: 'hsl(220 20% 14%)', primary: 'hsl(0 76% 44%)', 'primary-light': 'hsl(0 76% 44% / 0.05)', 'gold-light': 'hsl(43 74% 49% / 0.1)', accent: 'hsl(220 14% 96%)' };
+  if (cl?.backgroundColor && cl.backgroundColor !== 'none') advancedStyle.backgroundColor = bgColorMap[cl.backgroundColor] || undefined;
+  const gradientMap: Record<string, string> = { 'primary-to-dark': 'linear-gradient(135deg, hsl(0 76% 44%), hsl(0 60% 30%))', 'dark-to-light': 'linear-gradient(135deg, hsl(220 20% 14%), hsl(220 14% 96%))', 'gold-shimmer': 'linear-gradient(135deg, hsl(43 74% 49%), hsl(43 74% 65%))', 'blue-purple': 'linear-gradient(135deg, hsl(220 90% 56%), hsl(270 76% 55%))', sunset: 'linear-gradient(135deg, hsl(20 90% 56%), hsl(340 76% 55%))' };
+  if (cl?.backgroundGradient && cl.backgroundGradient !== 'none') advancedStyle.background = gradientMap[cl.backgroundGradient] || undefined;
+  const bwMap: Record<string, string> = { '1': '1px', '2': '2px', '4': '4px' };
+  if (cl?.borderWidth && cl.borderWidth !== 'none') advancedStyle.borderWidth = bwMap[cl.borderWidth] || undefined;
+  const bcMap: Record<string, string> = { default: 'hsl(220 13% 91%)', primary: 'hsl(0 76% 44%)', muted: 'hsl(220 9% 46%)', gold: 'hsl(43 74% 49%)', transparent: 'transparent' };
+  if (cl?.borderColor) advancedStyle.borderColor = bcMap[cl.borderColor] || undefined;
+  const brMap: Record<string, string> = { none: '0', sm: '0.25rem', md: '0.375rem', lg: '0.5rem', xl: '0.75rem', '2xl': '1rem', full: '9999px' };
+  if (cl?.borderRadius && cl.borderRadius !== 'none') advancedStyle.borderRadius = brMap[cl.borderRadius] || undefined;
+  if (cl?.borderStyle && cl.borderStyle !== 'solid') advancedStyle.borderStyle = cl.borderStyle;
+  const shadowMap: Record<string, string> = { sm: '0 1px 2px rgba(0,0,0,.05)', md: '0 4px 6px rgba(0,0,0,.1)', lg: '0 10px 15px rgba(0,0,0,.1)', xl: '0 20px 25px rgba(0,0,0,.1)', '2xl': '0 25px 50px rgba(0,0,0,.25)', inner: 'inset 0 2px 4px rgba(0,0,0,.06)' };
+  if (cl?.boxShadow && cl.boxShadow !== 'none') advancedStyle.boxShadow = shadowMap[cl.boxShadow] || undefined;
+  if (cl?.opacity && cl.opacity !== '100') advancedStyle.opacity = Number(cl.opacity) / 100;
+  if (cl?.overflow && cl.overflow !== 'visible') advancedStyle.overflow = cl.overflow as any;
+
   const colStyle: React.CSSProperties = {
     gridColumn: `span ${span} / span ${span}`,
+    ...advancedStyle,
   };
 
   return (
