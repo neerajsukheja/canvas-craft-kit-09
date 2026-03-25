@@ -1,103 +1,137 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { templates } from '@/data/templates';
-import { Layers, ArrowRight, Check } from 'lucide-react';
+import { Layers, ArrowRight, ExternalLink, X } from 'lucide-react';
+
+const similarPages: Record<string, { label: string; url: string }[]> = {
+  home: [
+    { label: 'Wells Fargo Home', url: 'https://www.wellsfargo.com' },
+    { label: 'Chase Home', url: 'https://www.chase.com' },
+    { label: 'Bank of America Home', url: 'https://www.bankofamerica.com' },
+  ],
+  landing: [
+    { label: 'Wells Fargo Checking', url: 'https://www.wellsfargo.com/checking/' },
+    { label: 'Chase Sapphire', url: 'https://creditcards.chase.com/sapphire-banking' },
+    { label: 'Citi Priority', url: 'https://www.citi.com/banking/citi-priority-account' },
+  ],
+  marketing: [
+    { label: 'Wells Fargo Active Cash', url: 'https://www.wellsfargo.com/credit-cards/active-cash/' },
+    { label: 'Chase Freedom', url: 'https://creditcards.chase.com/cash-back-credit-cards/freedom' },
+    { label: 'Amex Gold Card', url: 'https://www.americanexpress.com/us/credit-cards/card/gold-card/' },
+  ],
+  blog: [
+    { label: 'Wells Fargo Financial Education', url: 'https://www.wellsfargo.com/financial-education/' },
+    { label: 'NerdWallet Blog', url: 'https://www.nerdwallet.com/blog' },
+    { label: 'Bankrate Articles', url: 'https://www.bankrate.com/banking/' },
+  ],
+  dashboard: [
+    { label: 'Mint Dashboard', url: 'https://mint.intuit.com' },
+    { label: 'Personal Capital', url: 'https://www.personalcapital.com' },
+    { label: 'YNAB', url: 'https://www.ynab.com' },
+  ],
+};
 
 const Index = () => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState(templates[0].id);
   const navigate = useNavigate();
-
-  const handleContinue = () => {
-    navigate(`/builder/${selectedTemplateId}`);
-  };
+  const [popupTemplateId, setPopupTemplateId] = useState<string | null>(null);
 
   return (
-    <div className="flex min-h-screen bg-muted">
-      {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-[45%] bg-primary text-primary-foreground flex-col justify-between p-12">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-              <Layers className="w-5 h-5" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">Templify</span>
+    <div className="min-h-screen bg-background">
+      {/* Minimal header */}
+      <header className="border-b border-border bg-background">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+            <Layers className="w-4.5 h-4.5 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight">Templify Builder</h1>
+            <p className="text-xs text-muted-foreground">Visual Page Builder for React</p>
           </div>
         </div>
-        <div>
-          <h2 className="text-4xl font-extrabold leading-tight mb-4">
-            Build beautiful<br />pages visually.
-          </h2>
-          <p className="text-primary-foreground/80 text-lg leading-relaxed max-w-md">
-            Drag, drop, and customize. Export as React components or pixel-perfect snapshots.
-          </p>
-          <div className="mt-8 space-y-3">
-            {['12-column Bootstrap grid', 'Drag & drop components', 'Visual resize controls', 'Export as React or PNG'].map((feat) => (
-              <div key={feat} className="flex items-center gap-3 text-sm text-primary-foreground/90">
-                <div className="w-5 h-5 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-3 h-3" />
-                </div>
-                {feat}
-              </div>
-            ))}
-          </div>
+      </header>
+
+      {/* Main content */}
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold">Templates</h2>
+          <p className="text-sm text-muted-foreground mt-1">Choose a template to start building your page.</p>
         </div>
-        <p className="text-xs text-primary-foreground/50">
+
+        {/* Table */}
+        <div className="border border-border rounded-xl overflow-hidden bg-card">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-5 py-3">Template</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-5 py-3">Similar Pages</th>
+                <th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider px-5 py-3">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {templates.map((t, idx) => (
+                <tr key={t.id} className={`border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors`}>
+                  <td className="px-5 py-4">
+                    <div className="font-medium text-sm">{t.name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 max-w-sm">{t.description}</div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <button
+                      onClick={() => setPopupTemplateId(t.id)}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Show Similar Pages
+                    </button>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <button
+                      onClick={() => navigate(`/builder/${t.id}`)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
+                    >
+                      Create Page
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground mt-6 text-center">
           © 2026 Templify Builder · Visual Page Builder for React
         </p>
-      </div>
+      </main>
 
-      {/* Right selection panel */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-lg">
-          {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary mb-3">
-              <Layers className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">Templify Builder</h1>
-          </div>
-
-          <div className="hidden lg:block mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">Choose a template</h1>
-            <p className="text-muted-foreground mt-1.5">Select a starting point for your page design.</p>
-          </div>
-
-          {/* Template cards */}
-          <div className="space-y-3">
-            {templates.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setSelectedTemplateId(t.id)}
-                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                  selectedTemplateId === t.id
-                    ? 'border-primary bg-primary/5 shadow-md'
-                    : 'border-border bg-card hover:border-primary/30 hover:shadow-sm'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm">{t.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">{t.description}</p>
-                  </div>
-                  {selectedTemplateId === t.id && (
-                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-primary-foreground" />
-                    </div>
-                  )}
-                </div>
+      {/* Similar Pages Popup */}
+      {popupTemplateId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm" onClick={() => setPopupTemplateId(null)}>
+          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h3 className="font-semibold text-sm">
+                Similar Pages — {templates.find(t => t.id === popupTemplateId)?.name}
+              </h3>
+              <button onClick={() => setPopupTemplateId(null)} className="p-1 hover:bg-accent rounded-lg transition-colors">
+                <X className="w-4 h-4" />
               </button>
-            ))}
+            </div>
+            <div className="p-5 space-y-2">
+              {(similarPages[popupTemplateId] || []).map((link, i) => (
+                <a
+                  key={i}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between px-4 py-3 rounded-lg border border-border hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-sm font-medium">{link.label}</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </a>
+              ))}
+            </div>
           </div>
-
-          <button
-            onClick={handleContinue}
-            className="w-full mt-6 bg-primary text-primary-foreground rounded-xl py-3 text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-          >
-            Continue to Builder
-            <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

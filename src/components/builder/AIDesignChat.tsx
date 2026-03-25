@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Bot, Send, X, Sparkles, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import type { BuilderPage } from '@/types/builder';
 import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  isPageJson?: boolean; // marks messages that are raw page JSON (hidden from display)
 }
 
 interface Props {
@@ -14,11 +14,26 @@ interface Props {
   onApplyPageUpdate: (page: BuilderPage) => void;
 }
 
+function isLikelyPageJson(text: string): boolean {
+  const trimmed = text.trim();
+  let json = trimmed;
+  if (json.startsWith('```')) {
+    json = json.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '');
+  }
+  try {
+    const parsed = JSON.parse(json);
+    return parsed && Array.isArray(parsed.sections);
+  } catch {
+    return false;
+  }
+}
+
 export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreamingJson, setIsStreamingJson] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -39,6 +54,7 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
+    setIsStreamingJson(false);
 
     let assistantContent = '';
 
@@ -89,13 +105,21 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
               assistantContent += content;
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === 'assistant') {
-                  return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-                }
-                return [...prev, { role: 'assistant', content: assistantContent }];
-              });
+              
+              // Detect if this looks like JSON being streamed — show a thinking indicator instead
+              const trimmedSoFar = assistantContent.trim();
+              const looksLikeJson = trimmedSoFar.startsWith('{') || trimmedSoFar.startsWith('```');
+              setIsStreamingJson(looksLikeJson);
+
+              if (!looksLikeJson) {
+                setMessages(prev => {
+                  const last = prev[prev.length - 1];
+                  if (last?.role === 'assistant' && !last.isPageJson) {
+                    return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+                  }
+                  return [...prev, { role: 'assistant', content: assistantContent }];
+                });
+              }
             }
           } catch {
             textBuffer = line + '\n' + textBuffer;
@@ -104,18 +128,30 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
         }
       }
 
-      // Try to parse the assistant's response as page JSON
-      tryApplyUpdate(assistantContent);
+      // Try to apply as page JSON
+      const applied = tryApplyUpdate(assistantContent);
+      setIsStreamingJson(false);
+      
+      if (!applied) {
+        // It was regular text — make sure final content is shown
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last?.role === 'assistant' && !last.isPageJson) {
+            return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+          }
+          return [...prev, { role: 'assistant', content: assistantContent }];
+        });
+      }
     } catch (err: any) {
+      setIsStreamingJson(false);
       setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${err.message}` }]);
     } finally {
       setIsLoading(false);
     }
   }, [input, isLoading, messages, page, onApplyPageUpdate]);
 
-  const tryApplyUpdate = (content: string) => {
+  const tryApplyUpdate = (content: string): boolean => {
     try {
-      // Strip markdown code fences if present
       let jsonStr = content.trim();
       if (jsonStr.startsWith('```')) {
         jsonStr = jsonStr.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '');
@@ -124,10 +160,12 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
       if (parsed && parsed.sections && Array.isArray(parsed.sections)) {
         onApplyPageUpdate(parsed);
         setMessages(prev => [...prev, { role: 'assistant', content: '✅ Design updated! Check the canvas.' }]);
+        return true;
       }
     } catch {
-      // Response wasn't valid page JSON — that's fine, show as chat
+      // Not valid page JSON
     }
+    return false;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -144,9 +182,11 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
     'Change all button colors to gold',
   ];
 
+  // Filter out messages marked as page JSON
+  const visibleMessages = messages.filter(m => !m.isPageJson);
+
   return (
     <>
-      {/* Floating trigger button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -156,10 +196,8 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
         </button>
       )}
 
-      {/* Modal */}
       {isOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-[420px] h-[560px] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -178,9 +216,8 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
             </button>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            {messages.length === 0 && (
+            {visibleMessages.length === 0 && !isStreamingJson && (
               <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Sparkles className="w-6 h-6 text-primary" />
@@ -203,7 +240,7 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
               </div>
             )}
 
-            {messages.map((msg, i) => (
+            {visibleMessages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
                   msg.role === 'user'
@@ -221,10 +258,14 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
               </div>
             ))}
 
-            {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+            {/* Show thinking indicator when streaming JSON */}
+            {(isLoading && (isStreamingJson || visibleMessages[visibleMessages.length - 1]?.role !== 'assistant')) && (
               <div className="flex justify-start">
-                <div className="bg-muted rounded-xl px-4 py-3 rounded-bl-sm">
+                <div className="bg-muted rounded-xl px-4 py-3 rounded-bl-sm flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {isStreamingJson ? 'Generating design...' : 'Thinking...'}
+                  </span>
                 </div>
               </div>
             )}
@@ -232,7 +273,6 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div className="border-t border-border p-3 bg-muted/20">
             <div className="flex items-end gap-2">
               <textarea
