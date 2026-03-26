@@ -233,15 +233,19 @@ export const TYPOGRAPHY_LAYOUT_DEFS: PropertyDefinition[] = [
 ];
 
 export const STYLE_PROPERTY_DEFS: PropertyDefinition[] = [
-  { key: 'backgroundColor', label: 'Background Color', type: 'select', options: ['none', 'white', 'light', 'dark', 'primary', 'primary-light', 'gold-light', 'accent'] },
+  { key: 'textColor', label: 'Text Color', type: 'color' },
+  { key: 'bgColor', label: 'Background Color (custom)', type: 'color' },
+  { key: 'backgroundColor', label: 'Background Preset', type: 'select', options: ['none', 'white', 'light', 'dark', 'primary', 'primary-light', 'gold-light', 'accent'] },
   { key: 'backgroundGradient', label: 'Gradient', type: 'select', options: ['none', 'primary-to-dark', 'dark-to-light', 'gold-shimmer', 'blue-purple', 'sunset'] },
   { key: 'borderWidth', label: 'Border Width', type: 'select', options: ['none', '1', '2', '4'] },
-  { key: 'borderColor', label: 'Border Color', type: 'select', options: ['default', 'primary', 'muted', 'gold', 'transparent'] },
+  { key: 'borderColorCustom', label: 'Border Color (custom)', type: 'color' },
+  { key: 'borderColor', label: 'Border Color Preset', type: 'select', options: ['default', 'primary', 'muted', 'gold', 'transparent'] },
   { key: 'borderRadius', label: 'Border Radius', type: 'select', options: ['none', 'sm', 'md', 'lg', 'xl', '2xl', 'full'] },
   { key: 'borderStyle', label: 'Border Style', type: 'select', options: ['solid', 'dashed', 'dotted', 'none'] },
   { key: 'boxShadow', label: 'Box Shadow', type: 'select', options: ['none', 'sm', 'md', 'lg', 'xl', '2xl', 'inner'] },
   { key: 'opacity', label: 'Opacity', type: 'select', options: ['100', '90', '75', '50', '25', '10'] },
   { key: 'overflow', label: 'Overflow', type: 'select', options: ['visible', 'hidden', 'auto', 'scroll'] },
+  { key: 'customCSS', label: 'Custom CSS (JSON)', type: 'text' },
 ];
 
 export const SECTION_LAYOUT_DEFS: PropertyDefinition[] = [
