@@ -54,6 +54,12 @@ export interface LayoutProps {
   opacity?: string;
   // Display
   overflow?: string;
+  // Custom CSS
+  customCSS?: string;
+  // Direct color values
+  textColor?: string;
+  bgColor?: string;
+  borderColorCustom?: string;
 }
 
 export interface SectionLayout {
