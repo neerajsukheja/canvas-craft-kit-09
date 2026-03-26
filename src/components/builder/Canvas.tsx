@@ -176,6 +176,7 @@ export function Canvas({
                             onDragStart={() => setDraggedComp({ compId: comp.id, sectionId: section.id })}
                             onDragEnd={() => setDraggedComp(null)}
                             onUpdateComponentLayout={onUpdateComponentLayout}
+                            onUpdateComponentProps={onUpdateComponentProps}
                           />
                         ))}
                       </div>
