@@ -561,6 +561,7 @@ function DraggableComponent({
           double-click to edit
         </div>
       )}
+    </div>
   );
 }
 
