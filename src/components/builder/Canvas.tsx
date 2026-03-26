@@ -545,8 +545,22 @@ function DraggableComponent({
         </div>
       )}
 
-      <ComponentRenderer component={comp} />
-    </div>
+      <div
+        onDoubleClick={handleDoubleClick}
+        ref={editableRef}
+        contentEditable={isInlineEditing}
+        suppressContentEditableWarning
+        onBlur={handleInlineBlur}
+        onKeyDown={isInlineEditing ? handleInlineKeyDown : undefined}
+        className={isInlineEditing ? 'outline outline-2 outline-primary/50 rounded-sm min-w-[20px]' : ''}
+      >
+        <ComponentRenderer component={comp} />
+      </div>
+      {isSelected && editableTextKey && !isInlineEditing && (
+        <div className="absolute bottom-1 right-1 text-[9px] text-muted-foreground/60 bg-background/80 px-1 rounded opacity-0 group-hover/comp:opacity-100 transition-opacity pointer-events-none">
+          double-click to edit
+        </div>
+      )}
   );
 }
 

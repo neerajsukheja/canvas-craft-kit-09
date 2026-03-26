@@ -72,6 +72,7 @@ const BuilderPage = () => {
           onReorderSections={builder.reorderSections}
           onMoveComponent={builder.moveComponent}
           onUpdateComponentLayout={builder.updateComponentLayout}
+          onUpdateComponentProps={builder.updateComponentProps}
           canvasRef={canvasRef}
         />
         {showProperties && (
