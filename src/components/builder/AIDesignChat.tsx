@@ -285,23 +285,36 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
               </div>
             )}
 
-            {visibleMessages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
-                  msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground rounded-br-sm'
-                    : 'bg-muted rounded-bl-sm'
-                }`}>
-                  {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert [&>p]:m-0">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    msg.content
-                  )}
+            {visibleMessages.map((msg, i) => {
+              const displayText = msg.displayContent || (typeof msg.content === 'string' ? msg.content : 
+                (msg.content as MessageContent[]).filter(c => c.type === 'text').map(c => (c as any).text).join(''));
+              const hasImage = Array.isArray(msg.content) && msg.content.some(c => c.type === 'image_url');
+              
+              return (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
+                    msg.role === 'user'
+                      ? 'bg-primary text-primary-foreground rounded-br-sm'
+                      : 'bg-muted rounded-bl-sm'
+                  }`}>
+                    {msg.role === 'assistant' ? (
+                      <div className="prose prose-sm max-w-none dark:prose-invert [&>p]:m-0">
+                        <ReactMarkdown>{displayText}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div>
+                        {hasImage && (
+                          <div className="mb-1.5 flex items-center gap-1 text-[10px] opacity-80">
+                            <ImagePlus className="w-3 h-3" /> Image attached
+                          </div>
+                        )}
+                        <span className="whitespace-pre-wrap">{displayText}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Show thinking indicator when streaming JSON */}
             {(isLoading && (isStreamingJson || visibleMessages[visibleMessages.length - 1]?.role !== 'assistant')) && (
