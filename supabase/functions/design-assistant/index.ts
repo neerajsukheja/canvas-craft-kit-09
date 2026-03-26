@@ -65,7 +65,9 @@ RULES:
 2. Keep existing IDs unless adding new components (use format "comp-XXXX" or "section-XXXX" with random numbers).
 3. Only modify what the user asks for. Preserve everything else.
 4. If the user asks to add a section or component, create it with sensible defaults.
-5. Make sure colSpan values add up properly within sections (total shouldn't exceed 12 per row).`;
+5. Make sure colSpan values add up properly within sections (total shouldn't exceed 12 per row).
+6. Components support customCSS in layout (JSON object of CSS properties), textColor, bgColor, borderColorCustom for direct color values.
+7. If the user attaches an image, analyze it to understand the desired layout/style and replicate it using the available components.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
