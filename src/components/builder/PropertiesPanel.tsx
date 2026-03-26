@@ -24,13 +24,36 @@ function RenderField({
   return (
     <div className="space-y-1">
       <label className="text-[11px] font-medium text-muted-foreground">{def.label}</label>
-      {(def.type === 'text' || def.type === 'color') && (
+      {def.type === 'text' && (
         <input
           type="text"
           value={(value as string) || ''}
           onChange={e => onChange(e.target.value)}
           className="w-full border border-input rounded-lg px-2.5 py-1.5 text-xs bg-background focus:ring-1 focus:ring-ring outline-none transition-colors"
         />
+      )}
+      {def.type === 'color' && (
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={(value as string) || '#000000'}
+            onChange={e => onChange(e.target.value)}
+            className="w-8 h-8 rounded border border-input cursor-pointer p-0.5"
+          />
+          <input
+            type="text"
+            value={(value as string) || ''}
+            onChange={e => onChange(e.target.value)}
+            placeholder="#hex or css color"
+            className="flex-1 border border-input rounded-lg px-2.5 py-1.5 text-xs bg-background focus:ring-1 focus:ring-ring outline-none transition-colors"
+          />
+          {value && (
+            <button
+              onClick={() => onChange('')}
+              className="text-[10px] text-muted-foreground hover:text-destructive px-1"
+            >✕</button>
+          )}
+        </div>
       )}
       {def.type === 'select' && (
         <select
