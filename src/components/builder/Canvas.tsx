@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Trash2, Plus, ChevronUp, ChevronDown, GripVertical, Move } from 'lucide-react';
-import type { BuilderPage, BuilderComponent, BuilderSection, ComponentType, LayoutProps } from '@/types/builder';
+import type { BuilderPage, BuilderComponent, BuilderSection, ComponentType, LayoutProps, ComponentProps } from '@/types/builder';
 import { ComponentRenderer } from './ComponentRenderer';
 
 interface Props {
@@ -16,6 +16,7 @@ interface Props {
   onReorderSections: (from: number, to: number) => void;
   onMoveComponent: (fromSectionId: string, toSectionId: string, componentId: string, toIndex: number) => void;
   onUpdateComponentLayout: (id: string, layout: Partial<LayoutProps>) => void;
+  onUpdateComponentProps: (id: string, props: Partial<ComponentProps>) => void;
   canvasRef: React.RefObject<HTMLDivElement>;
 }
 
