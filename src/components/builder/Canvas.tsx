@@ -215,7 +215,7 @@ function DraggableComponent({
   dragOverSection, dragOverIndex,
   onSelectComponent, onSelectSection, onDeleteComponent,
   onDragOver, onDrop, onDragStart, onDragEnd,
-  onUpdateComponentLayout,
+  onUpdateComponentLayout, onUpdateComponentProps,
 }: {
   comp: BuilderComponent;
   cIdx: number;
@@ -231,6 +231,7 @@ function DraggableComponent({
   onDragStart: () => void;
   onDragEnd: () => void;
   onUpdateComponentLayout: (id: string, layout: Partial<LayoutProps>) => void;
+  onUpdateComponentProps: (id: string, props: Partial<ComponentProps>) => void;
 }) {
   const cl = comp.layout;
   const span = cl?.colSpan || 12;
