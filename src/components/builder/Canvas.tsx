@@ -63,6 +63,7 @@ export function Canvas({
   onSelectComponent, onSelectSection, onAddComponent,
   onDeleteComponent, onDeleteSection, onAddSection,
   onReorderSections, onMoveComponent, onUpdateComponentLayout,
+  onUpdateComponentProps,
   canvasRef,
 }: Props) {
   const [dragOverSection, setDragOverSection] = useState<string | null>(null);
