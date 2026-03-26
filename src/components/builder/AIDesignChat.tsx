@@ -1,13 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Bot, Send, X, Sparkles, Loader2 } from 'lucide-react';
+import { Bot, Send, X, Sparkles, Loader2, ImagePlus } from 'lucide-react';
 import type { BuilderPage } from '@/types/builder';
 import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
-  content: string;
-  isPageJson?: boolean; // marks messages that are raw page JSON (hidden from display)
+  content: string | MessageContent[];
+  displayContent?: string; // human-readable version for display
+  isPageJson?: boolean;
 }
+
+type MessageContent = 
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
 
 interface Props {
   page: BuilderPage;
