@@ -332,7 +332,31 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
           </div>
 
           <div className="border-t border-border p-3 bg-muted/20">
+            {attachedImage && (
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <img src={attachedImage} alt="attached" className="w-10 h-10 rounded-lg object-cover border border-border" />
+                <span className="text-[11px] text-muted-foreground flex-1 truncate">{attachedImageName}</span>
+                <button onClick={() => { setAttachedImage(null); setAttachedImageName(''); }} className="text-muted-foreground hover:text-destructive">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <div className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="p-2.5 text-muted-foreground hover:text-foreground rounded-xl hover:bg-accent transition-colors shrink-0 disabled:opacity-40"
+                title="Attach image"
+              >
+                <ImagePlus className="w-4 h-4" />
+              </button>
               <textarea
                 ref={inputRef}
                 value={input}
