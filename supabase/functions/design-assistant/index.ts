@@ -65,7 +65,9 @@ RULES:
 2. Keep existing IDs unless adding new components (use format "comp-XXXX" or "section-XXXX" with random numbers).
 3. Only modify what the user asks for. Preserve everything else.
 4. If the user asks to add a section or component, create it with sensible defaults.
-5. Make sure colSpan values add up properly within sections (total shouldn't exceed 12 per row).`;
+5. Make sure colSpan values add up properly within sections (total shouldn't exceed 12 per row).
+6. Components support customCSS in layout (JSON object of CSS properties), textColor, bgColor, borderColorCustom for direct color values.
+7. If the user attaches an image, analyze it to understand the desired layout/style and replicate it using the available components.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -77,14 +79,25 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const userMessages = messages.map((m: { role: string; content: string }) => ({
+    // Process messages - handle both string and multimodal content
+    const userMessages = messages.map((m: { role: string; content: any }) => ({
       role: m.role,
-      content: m.content,
+      content: m.content, // can be string or array of content parts
     }));
 
     // Inject the current page state into the latest user message
     const lastUserMsg = userMessages[userMessages.length - 1];
-    lastUserMsg.content = `Current page state:\n${JSON.stringify(pageState, null, 2)}\n\nUser request: ${lastUserMsg.content}`;
+    const pageContext = `Current page state:\n${JSON.stringify(pageState, null, 2)}\n\nUser request: `;
+    
+    if (typeof lastUserMsg.content === 'string') {
+      lastUserMsg.content = pageContext + lastUserMsg.content;
+    } else if (Array.isArray(lastUserMsg.content)) {
+      // Find the text part and prepend page state
+      const textPart = lastUserMsg.content.find((p: any) => p.type === 'text');
+      if (textPart) {
+        textPart.text = pageContext + textPart.text;
+      }
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

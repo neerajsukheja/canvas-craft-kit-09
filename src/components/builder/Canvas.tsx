@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Trash2, Plus, ChevronUp, ChevronDown, GripVertical, Move } from 'lucide-react';
-import type { BuilderPage, BuilderComponent, BuilderSection, ComponentType, LayoutProps } from '@/types/builder';
+import type { BuilderPage, BuilderComponent, BuilderSection, ComponentType, LayoutProps, ComponentProps } from '@/types/builder';
 import { ComponentRenderer } from './ComponentRenderer';
 
 interface Props {
@@ -16,6 +16,7 @@ interface Props {
   onReorderSections: (from: number, to: number) => void;
   onMoveComponent: (fromSectionId: string, toSectionId: string, componentId: string, toIndex: number) => void;
   onUpdateComponentLayout: (id: string, layout: Partial<LayoutProps>) => void;
+  onUpdateComponentProps: (id: string, props: Partial<ComponentProps>) => void;
   canvasRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -62,6 +63,7 @@ export function Canvas({
   onSelectComponent, onSelectSection, onAddComponent,
   onDeleteComponent, onDeleteSection, onAddSection,
   onReorderSections, onMoveComponent, onUpdateComponentLayout,
+  onUpdateComponentProps,
   canvasRef,
 }: Props) {
   const [dragOverSection, setDragOverSection] = useState<string | null>(null);
@@ -174,6 +176,7 @@ export function Canvas({
                             onDragStart={() => setDraggedComp({ compId: comp.id, sectionId: section.id })}
                             onDragEnd={() => setDraggedComp(null)}
                             onUpdateComponentLayout={onUpdateComponentLayout}
+                            onUpdateComponentProps={onUpdateComponentProps}
                           />
                         ))}
                       </div>
@@ -212,7 +215,7 @@ function DraggableComponent({
   dragOverSection, dragOverIndex,
   onSelectComponent, onSelectSection, onDeleteComponent,
   onDragOver, onDrop, onDragStart, onDragEnd,
-  onUpdateComponentLayout,
+  onUpdateComponentLayout, onUpdateComponentProps,
 }: {
   comp: BuilderComponent;
   cIdx: number;
@@ -228,6 +231,7 @@ function DraggableComponent({
   onDragStart: () => void;
   onDragEnd: () => void;
   onUpdateComponentLayout: (id: string, layout: Partial<LayoutProps>) => void;
+  onUpdateComponentProps: (id: string, props: Partial<ComponentProps>) => void;
 }) {
   const cl = comp.layout;
   const span = cl?.colSpan || 12;
@@ -408,11 +412,53 @@ function DraggableComponent({
   const shadowMap: Record<string, string> = { sm: '0 1px 2px rgba(0,0,0,.05)', md: '0 4px 6px rgba(0,0,0,.1)', lg: '0 10px 15px rgba(0,0,0,.1)', xl: '0 20px 25px rgba(0,0,0,.1)', '2xl': '0 25px 50px rgba(0,0,0,.25)', inner: 'inset 0 2px 4px rgba(0,0,0,.06)' };
   if (cl?.boxShadow && cl.boxShadow !== 'none') advancedStyle.boxShadow = shadowMap[cl.boxShadow] || undefined;
   if (cl?.opacity && cl.opacity !== '100') advancedStyle.opacity = Number(cl.opacity) / 100;
-  if (cl?.overflow && cl.overflow !== 'visible') advancedStyle.overflow = cl.overflow as any;
+  // Custom direct colors
+  if (cl?.textColor) advancedStyle.color = cl.textColor;
+  if (cl?.bgColor) advancedStyle.backgroundColor = cl.bgColor;
+  if (cl?.borderColorCustom) advancedStyle.borderColor = cl.borderColorCustom;
+
+  // Custom CSS (parse JSON-like object)
+  if (cl?.customCSS) {
+    try {
+      const custom = JSON.parse(cl.customCSS);
+      Object.assign(advancedStyle, custom);
+    } catch { /* ignore invalid CSS JSON */ }
+  }
 
   const colStyle: React.CSSProperties = {
     gridColumn: `span ${span} / span ${span}`,
     ...advancedStyle,
+  };
+
+  const [isInlineEditing, setIsInlineEditing] = useState(false);
+  const editableRef = useRef<HTMLDivElement>(null);
+
+  const editableTextKey = ['typography'].includes(comp.type) ? 'text'
+    : ['button'].includes(comp.type) ? 'label'
+    : ['card', 'icon-card'].includes(comp.type) ? 'title'
+    : null;
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (!editableTextKey || !isSelected) return;
+    e.stopPropagation();
+    setIsInlineEditing(true);
+  };
+
+  const handleInlineBlur = () => {
+    if (!editableTextKey || !editableRef.current) return;
+    const newText = editableRef.current.textContent || '';
+    onUpdateComponentProps(comp.id, { [editableTextKey]: newText });
+    setIsInlineEditing(false);
+  };
+
+  const handleInlineKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleInlineBlur();
+    }
+    if (e.key === 'Escape') {
+      setIsInlineEditing(false);
+    }
   };
 
   return (
@@ -499,7 +545,22 @@ function DraggableComponent({
         </div>
       )}
 
-      <ComponentRenderer component={comp} />
+      <div
+        onDoubleClick={handleDoubleClick}
+        ref={editableRef}
+        contentEditable={isInlineEditing}
+        suppressContentEditableWarning
+        onBlur={handleInlineBlur}
+        onKeyDown={isInlineEditing ? handleInlineKeyDown : undefined}
+        className={isInlineEditing ? 'outline outline-2 outline-primary/50 rounded-sm min-w-[20px]' : ''}
+      >
+        <ComponentRenderer component={comp} />
+      </div>
+      {isSelected && editableTextKey && !isInlineEditing && (
+        <div className="absolute bottom-1 right-1 text-[9px] text-muted-foreground/60 bg-background/80 px-1 rounded opacity-0 group-hover/comp:opacity-100 transition-opacity pointer-events-none">
+          double-click to edit
+        </div>
+      )}
     </div>
   );
 }

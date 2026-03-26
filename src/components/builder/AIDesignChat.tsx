@@ -1,13 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Bot, Send, X, Sparkles, Loader2 } from 'lucide-react';
+import { Bot, Send, X, Sparkles, Loader2, ImagePlus } from 'lucide-react';
 import type { BuilderPage } from '@/types/builder';
 import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
-  content: string;
-  isPageJson?: boolean; // marks messages that are raw page JSON (hidden from display)
+  content: string | MessageContent[];
+  displayContent?: string; // human-readable version for display
+  isPageJson?: boolean;
 }
+
+type MessageContent = 
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
 
 interface Props {
   page: BuilderPage;
@@ -34,8 +39,11 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isStreamingJson, setIsStreamingJson] = useState(false);
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [attachedImageName, setAttachedImageName] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -45,14 +53,42 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
     if (isOpen) inputRef.current?.focus();
   }, [isOpen]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedImage(reader.result as string);
+      setAttachedImageName(file.name);
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
 
-    const userMsg: Message = { role: 'user', content: trimmed };
+    // Build message content
+    let userContent: string | MessageContent[];
+    let displayContent = trimmed;
+
+    if (attachedImage) {
+      userContent = [
+        { type: 'text', text: trimmed },
+        { type: 'image_url', image_url: { url: attachedImage } },
+      ];
+      displayContent = `📎 ${attachedImageName}\n${trimmed}`;
+    } else {
+      userContent = trimmed;
+    }
+
+    const userMsg: Message = { role: 'user', content: userContent, displayContent };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput('');
+    setAttachedImage(null);
+    setAttachedImageName('');
     setIsLoading(true);
     setIsStreamingJson(false);
 
@@ -60,6 +96,15 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
 
     try {
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/design-assistant`;
+      
+      // Serialize messages for the API - convert content arrays to the format the edge function expects
+      const apiMessages = newMessages.map(m => {
+        if (Array.isArray(m.content)) {
+          return { role: m.role, content: m.content };
+        }
+        return { role: m.role, content: m.content };
+      });
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -67,7 +112,7 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          messages: apiMessages,
           pageState: page,
         }),
       });
@@ -240,23 +285,36 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
               </div>
             )}
 
-            {visibleMessages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
-                  msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground rounded-br-sm'
-                    : 'bg-muted rounded-bl-sm'
-                }`}>
-                  {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert [&>p]:m-0">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    msg.content
-                  )}
+            {visibleMessages.map((msg, i) => {
+              const displayText = msg.displayContent || (typeof msg.content === 'string' ? msg.content : 
+                (msg.content as MessageContent[]).filter(c => c.type === 'text').map(c => (c as any).text).join(''));
+              const hasImage = Array.isArray(msg.content) && msg.content.some(c => c.type === 'image_url');
+              
+              return (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm ${
+                    msg.role === 'user'
+                      ? 'bg-primary text-primary-foreground rounded-br-sm'
+                      : 'bg-muted rounded-bl-sm'
+                  }`}>
+                    {msg.role === 'assistant' ? (
+                      <div className="prose prose-sm max-w-none dark:prose-invert [&>p]:m-0">
+                        <ReactMarkdown>{displayText}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div>
+                        {hasImage && (
+                          <div className="mb-1.5 flex items-center gap-1 text-[10px] opacity-80">
+                            <ImagePlus className="w-3 h-3" /> Image attached
+                          </div>
+                        )}
+                        <span className="whitespace-pre-wrap">{displayText}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Show thinking indicator when streaming JSON */}
             {(isLoading && (isStreamingJson || visibleMessages[visibleMessages.length - 1]?.role !== 'assistant')) && (
@@ -274,7 +332,31 @@ export function AIDesignChat({ page, onApplyPageUpdate }: Props) {
           </div>
 
           <div className="border-t border-border p-3 bg-muted/20">
+            {attachedImage && (
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <img src={attachedImage} alt="attached" className="w-10 h-10 rounded-lg object-cover border border-border" />
+                <span className="text-[11px] text-muted-foreground flex-1 truncate">{attachedImageName}</span>
+                <button onClick={() => { setAttachedImage(null); setAttachedImageName(''); }} className="text-muted-foreground hover:text-destructive">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <div className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="p-2.5 text-muted-foreground hover:text-foreground rounded-xl hover:bg-accent transition-colors shrink-0 disabled:opacity-40"
+                title="Attach image"
+              >
+                <ImagePlus className="w-4 h-4" />
+              </button>
               <textarea
                 ref={inputRef}
                 value={input}
